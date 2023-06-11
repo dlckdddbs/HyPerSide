@@ -8,10 +8,21 @@ public enum State
     DIE
 }
 
+public enum Enemy
+{
+    LINE1,
+    LINE2,
+    LINE3
+}
+
+
 public class Unit : MonoBehaviour
 {
     public bool isEnemy;
-    bool isDie;
+    public bool isDie;
+    private float Delay = 0.1f;
+    private float temp1;
+    //public bool[] enemy = new bool[3];
 
     [Header("status")]
     public int hp = 10;
@@ -19,19 +30,23 @@ public class Unit : MonoBehaviour
     public float speed = 3f;
 
     [Range(0f, 30f)]
-    public float distance = 10f;
+    public float distance = 3.0f;
 
     public float delay = 2f;
 
     public Transform pivot;
 
-    State state;
+    public State state;
+    public Enemy enemy;
 
     private Animator anime;
     private readonly int hashWalk = Animator.StringToHash("isWalking");
+    private readonly int hashAttack = Animator.StringToHash("isAttack");
 
     void Start()
     {
+        temp1 = delay;
+        enemy = Enemy.LINE1;
         anime = GetComponent<Animator>();
         state = State.WALK;
         StartCoroutine(CheckingStatement());
@@ -42,27 +57,75 @@ public class Unit : MonoBehaviour
         if (state == State.DIE)
             return;
 
-        if (Physics.Raycast(transform.position, new Vector3(1f, 0f, 0f), out RaycastHit hit, distance))
+        Unit EnemyCheck = null; //찾으려는 타겟의 빈 값을 생성.
+
+        Collider[] colliderList = Physics.OverlapSphere(transform.position, 10.0f, LayerMask.GetMask("Unit"));
+
+        for (int i = 0; i < colliderList.Length; i++)
         {
-            if (hit.transform.CompareTag("UNIT"))
+            //Unit라는 스크립트를 가진 오브젝트가 있는 지 확인
+            Unit searchTarget = colliderList[i].GetComponent<Unit>();
+            //타워에 타입과 공격범위안에 들어온 유닛이 아군이라면 패스
+            // 아니라면
+            if (isEnemy != searchTarget.isEnemy && searchTarget && searchTarget.isDie == false)
             {
-                Unit unit = hit.transform.GetComponent<Unit>();
-                if (unit.isEnemy != isEnemy)
-                {
-                    state = State.ATTACK;
-                    unit.Damage(damage);
-                }
+
+                EnemyCheck = searchTarget;
+                Debug.Log("dk");
+                //찾았으니 이제 더이상 순환문을 돌 필요 없으니 나감.
+                break;
             }
+
         }
-        Debug.DrawRay(pivot.position, new Vector3(distance, 0f, 0f), Color.red);
+
+        if (EnemyCheck != null)
+        {
+            Vector3 viewPos = EnemyCheck.transform.position - transform.position;
+
+            Quaternion rot = Quaternion.LookRotation(viewPos, Vector3.up);
+            //해당 회전값 만큼 내 몸을 회전 시킴.
+            transform.rotation = Quaternion.Lerp(transform.rotation, rot, Time.deltaTime * 20.0f);
+
+            if (Delay <= 0f)
+            {
+                //if (Input.GetMouseButtonDown(0)) //여기 에러!!!!!!!!!!!!!!!!!!!!!!!!!
+                state = State.ATTACK;
+                EnemyCheck.Damage(damage);
+                Delay = temp1;
+            }
+            else
+            {
+                Delay -= Time.deltaTime;
+            }
+
+
+        }
+        else
+            state = State.WALK;
+        //    if (Physics.Raycast(transform.position, new Vector3(1f, 0f, 0f), out RaycastHit hit, distance))
+        //    {
+        //        if (hit.transform.CompareTag("UNIT"))
+        //        {
+        //            Unit unit = hit.transform.GetComponent<Unit>();
+        //            if (unit.isEnemy != isEnemy)
+        //            {
+        //                state = State.ATTACK;
+        //                unit.Damage(damage);
+        //                goto here;
+        //            }
+        //        }
+        //    }
+
+        //here:;
+        //    Debug.DrawRay(pivot.position, new Vector3(distance * (isEnemy ? -1 : 1), 0f, 0f), Color.red);
 
         if (state == State.WALK)
         {
-            transform.position += speed * Time.deltaTime * new Vector3(isEnemy ? -1 : 1, 0f);
+            transform.Translate(Vector3.forward * speed * Time.deltaTime);
         }
     }
 
-    void Damage(int damage)
+    public void Damage(int damage)
     {
         hp -= damage;
         if (hp <= 0)
@@ -81,15 +144,18 @@ public class Unit : MonoBehaviour
             {
                 case State.WALK:
                     anime.SetBool(hashWalk, true);
+                    anime.SetBool(hashAttack, false);
                     break;
 
                 case State.ATTACK:
                     anime.SetBool(hashWalk, false);
+                    anime.SetBool(hashAttack, true);
                     break;
 
                 case State.DIE:
                     isDie = true;
-
+                    anime.SetBool(hashWalk, false);
+                    anime.SetBool(hashAttack, false);
                     break;
             }
 
