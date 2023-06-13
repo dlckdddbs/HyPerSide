@@ -6,7 +6,7 @@ using UnityEngine.Events;
 
 public class Card : MonoBehaviour
 {
-    public delegate void UnitSpawningHandler(GameObject unit, int wayIndex);
+    public delegate void UnitSpawningHandler(GameObject unit, int wayIndex, bool isEenemy);
     public static event UnitSpawningHandler OnUnitSpawning;
 
     public delegate void DeckDrawingHandler(int idx);
@@ -39,7 +39,7 @@ public class Card : MonoBehaviour
 
     void OnMouseDrag()
     {
-        m = Camera.main.ScreenToViewportPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, -Camera.main.transform.position.z));
+        m = Camera.main.ScreenToViewportPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, - Camera.main.transform.position.z));
         transform.localPosition = new Vector3((m.x - 0.5f) * 12f, (m.y - 0.2f) * 7f, 0.7f);
 
         mat.color = new Color(1, 1, 1, 0.34f);
@@ -54,21 +54,21 @@ public class Card : MonoBehaviour
         float y = m.y;
         if (y > .77f)
         {
-            Debug.Log("3");
+            //Debug.Log("3");
 
             ThrowCard(2);
             return;
         }
         else if (y > .54f)
         {
-            Debug.Log("2");
+            //Debug.Log("2");
 
             ThrowCard(1);
             return;
         }
         else if (y > .31f)
         {
-            Debug.Log("1");
+            //Debug.Log("1");
 
             ThrowCard(0);
             return;
@@ -84,7 +84,7 @@ public class Card : MonoBehaviour
         GameObject card = Resources.Load<GameObject>("card");
 
         deck.unitQueue.Enqueue(card);
-        OnUnitSpawning(unit, idx);
+        OnUnitSpawning(unit, idx, false);
         OnDeckDrawing(cardIndex);
         Destroy(gameObject);
     }

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class UnitSpawnController : MonoBehaviour
 {
-    public Transform[] spawnTrans = new Transform[3];
+    public Transform[] spawnTrans;
     public GameObject area;
 
     void Awake()
@@ -13,8 +13,10 @@ public class UnitSpawnController : MonoBehaviour
         Card.OnCardHolding += area.SetActive;
     }
 
-    void UnitSpawning(GameObject unit, int wayIndex)
+    public void UnitSpawning(GameObject unit, int wayIndex, bool isEnemy)
     {
-        Instantiate(unit, spawnTrans[wayIndex].position, Quaternion.Euler(0f, 90f, 0f));
+        GameObject temp = Instantiate(unit, spawnTrans[wayIndex + (isEnemy ? 3 : 0)].position, Quaternion.Euler(0f, (isEnemy ? -1 : 1) * 90f, 0f));
+        temp.GetComponent<Unit>().linetype = (LINETYPE)wayIndex;
+        Debug.Log(wayIndex);
     }
 }

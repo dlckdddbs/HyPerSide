@@ -3,15 +3,17 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class Tower : MonoBehaviour
+public class Tower : Unit
 {
-    public bool isAIType;
     public GameObject shootPoint;
+
+    private float shootDelay = 0.7f;
+    private float temp;
 
     // Start is called before the first frame update
     void Start()
     {
-        isAIType = true;
+        temp = shootDelay;
     }
 
     // Update is called once per frame
@@ -26,12 +28,12 @@ public class Tower : MonoBehaviour
             //Unit라는 스크립트를 가진 오브젝트가 있는 지 확인
             Unit searchTarget = colliderList[i].GetComponent<Unit>();
             //타워에 타입과 공격범위안에 들어온 유닛이 아군이라면 패스
-            if (isAIType == searchTarget.isAIType)
+            if (isEnemy == searchTarget.isEnemy)
                 continue;
             // 아니라면
             if (searchTarget && searchTarget.isDie == false)
             {
-                StartCoroutine(BulletBustShoot2());
+                //StartCoroutine(BulletBustShoot2());
                 //적의 타겟이 됨.
                 targetUnit = searchTarget;
                 
@@ -46,8 +48,16 @@ public class Tower : MonoBehaviour
             Quaternion rot = Quaternion.LookRotation(viewPos, Vector3.up);
             //해당 회전값 만큼 내 몸을 회전 시킴.
             transform.rotation = Quaternion.Lerp(transform.rotation, rot, Time.deltaTime * 20.0f);
-            if (Input.GetMouseButtonDown(0)) //여기 에러!!!!!!!!!!!!!!!!!!!!!!!!!
-            StartCoroutine(BulletBustShoot());
+            if (shootDelay <= 0f)
+            {
+                //if (Input.GetMouseButtonDown(0)) //여기 에러!!!!!!!!!!!!!!!!!!!!!!!!!
+                BulletShoot();
+                shootDelay = temp;
+            }
+            else
+            {
+                shootDelay -= Time.deltaTime;
+            }
         }
 
     }
@@ -68,7 +78,8 @@ public class Tower : MonoBehaviour
             }
         }
     }
-    public IEnumerator BulletBustShoot()
+
+    /*public IEnumerator BulletBustShoot()
     {
         for (int i = 0; i < 3; i++)
         {
@@ -78,7 +89,7 @@ public class Tower : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
 
         }
-    }
+    }*/
     public IEnumerator BulletBustShoot2()
     {
             yield return new WaitForSeconds(5.0f);

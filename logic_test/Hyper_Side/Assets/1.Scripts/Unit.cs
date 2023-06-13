@@ -8,7 +8,7 @@ public enum State
     DIE
 }
 
-public enum Enemy
+public enum LINETYPE
 {
     LINE1,
     LINE2,
@@ -32,12 +32,15 @@ public class Unit : MonoBehaviour
     [Range(0f, 30f)]
     public float distance = 3.0f;
 
-    public float delay = 2f;
+    public float firstDelay;
+    public float lastDelay;
+    private float delay = 0f;
+    private float delTemp;
 
     public Transform pivot;
 
     public State state;
-    public Enemy enemy;
+    public LINETYPE linetype;
 
     private Animator anime;
     private readonly int hashWalk = Animator.StringToHash("isWalking");
@@ -46,7 +49,6 @@ public class Unit : MonoBehaviour
     void Start()
     {
         temp1 = delay;
-        enemy = Enemy.LINE1;
         anime = GetComponent<Animator>();
         state = State.WALK;
         StartCoroutine(CheckingStatement());
@@ -59,7 +61,7 @@ public class Unit : MonoBehaviour
 
         Unit EnemyCheck = null; //찾으려는 타겟의 빈 값을 생성.
 
-        Collider[] colliderList = Physics.OverlapSphere(transform.position, 10.0f, LayerMask.GetMask("Unit"));
+        Collider[] colliderList = Physics.OverlapSphere(transform.position, 20.0f, LayerMask.GetMask("Unit"));
 
         for (int i = 0; i < colliderList.Length; i++)
         {
@@ -69,12 +71,16 @@ public class Unit : MonoBehaviour
             // 아니라면
             if (isEnemy != searchTarget.isEnemy && searchTarget && searchTarget.isDie == false)
             {
+                if (linetype == searchTarget.linetype)
+                {
+                    EnemyCheck = searchTarget;
 
-                EnemyCheck = searchTarget;
-                Debug.Log("dk");
-                //찾았으니 이제 더이상 순환문을 돌 필요 없으니 나감.
-                break;
+                    //찾았으니 이제 더이상 순환문을 돌 필요 없으니 나감.
+                    break;
+                }
+
             }
+            //else 다시 각도 초기화 rotaion = quen.Euler(0,90,0);
 
         }
 
@@ -86,38 +92,50 @@ public class Unit : MonoBehaviour
             //해당 회전값 만큼 내 몸을 회전 시킴.
             transform.rotation = Quaternion.Lerp(transform.rotation, rot, Time.deltaTime * 20.0f);
 
-            if (Delay <= 0f)
-            {
-                //if (Input.GetMouseButtonDown(0)) //여기 에러!!!!!!!!!!!!!!!!!!!!!!!!!
-                state = State.ATTACK;
-                EnemyCheck.Damage(damage);
-                Delay = temp1;
-            }
-            else
-            {
-                Delay -= Time.deltaTime;
-            }
-
+            //if (Delay <= 0f)
+            //{
+            //    //if (Input.GetMouseButtonDown(0)) //여기 에러!!!!!!!!!!!!!!!!!!!!!!!!!
+            //    state = State.ATTACK;
+            //    EnemyCheck.Damage(damage);
+            //    Delay = temp1;
+            //}
+            //else
+            //{
+            //    Delay -= Time.deltaTime;
+            //}
 
         }
-        else
-            state = State.WALK;
-        //    if (Physics.Raycast(transform.position, new Vector3(1f, 0f, 0f), out RaycastHit hit, distance))
-        //    {
-        //        if (hit.transform.CompareTag("UNIT"))
-        //        {
-        //            Unit unit = hit.transform.GetComponent<Unit>();
-        //            if (unit.isEnemy != isEnemy)
-        //            {
-        //                state = State.ATTACK;
-        //                unit.Damage(damage);
-        //                goto here;
-        //            }
-        //        }
-        //    }
+        else if(isEnemy==false)
+            transform.rotation = Quaternion.Euler(0, 90, 0);
+        else if (isEnemy == true)
+            transform.rotation = Quaternion.Euler(0, -90, 0);
 
-        //here:;
-        //    Debug.DrawRay(pivot.position, new Vector3(distance * (isEnemy ? -1 : 1), 0f, 0f), Color.red);
+        state = State.WALK;
+        if (Physics.Raycast(transform.position, new Vector3(1f, 0f, 0f), out RaycastHit hit, distance))
+        {
+            if (hit.transform.CompareTag("UNIT"))
+            {
+                Unit unit = hit.transform.GetComponent<Unit>();
+                if (unit.isEnemy != isEnemy)
+                {
+                    state = State.ATTACK;
+                    if (firstDelay + lastDelay > delay)
+                    {
+                        delay += Time.deltaTime;
+                    }
+                    else
+                    {
+                        delay = 0f;
+                        StartCoroutine(Attack(unit));
+                    }
+                    //코루틴
+                    goto here;
+                }
+            }
+        }
+
+    here:;
+        Debug.DrawRay(pivot.position, new Vector3(distance * (isEnemy ? -1 : 1), 0f, 0f), Color.red);
 
         if (state == State.WALK)
         {
@@ -132,8 +150,14 @@ public class Unit : MonoBehaviour
         {
             isDie = true;
             state = State.DIE;
-            Destroy(gameObject, 1f);
+            Destroy(gameObject, 0.5f);
         }
+    }
+
+    IEnumerator Attack(Unit unit)
+    {
+        yield return new WaitForSeconds(firstDelay);
+        unit.Damage(damage);
     }
 
     IEnumerator CheckingStatement()

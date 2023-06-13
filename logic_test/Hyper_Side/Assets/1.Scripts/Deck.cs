@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class Deck : MonoBehaviour
@@ -17,7 +16,7 @@ public class Deck : MonoBehaviour
     {
         transform.eulerAngles = cam.eulerAngles;
 
-        unitQueue = new();
+        unitQueue = new Queue<GameObject>();
         Card.OnDeckDrawing += Draw;
 
         for (int i = 0; i < 8; i++)
