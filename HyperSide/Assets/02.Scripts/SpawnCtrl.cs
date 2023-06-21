@@ -33,7 +33,7 @@ public class SpawnCtrl : MonoBehaviour
     {
         // System 라이브러리 안에 있는 랜덤 클래스
         // 유니티에서 제공하는 Random 클래스 써도 됨
-        System.Random rand = new();
+        System.Random rand = new System.Random();
 
         // 게임 끝날 때까지 반복
         while (manager.isPlaying)
